@@ -16,3 +16,4 @@ pysrt==1.1.2
 psutil==5.9.2
 requests==2.28.2
 pyannote.audio==2.1.1
+stable-ts==1.1.4

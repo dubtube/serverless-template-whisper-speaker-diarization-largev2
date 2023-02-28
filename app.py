@@ -4,6 +4,7 @@ import wave
 import torch
 import base64
 import whisper
+import stable_whisper
 import datetime
 import contextlib
 import numpy as np
@@ -23,14 +24,11 @@ def init():
     global embedding_model
     #medium, large-v1, large-v2
     model_name = "large-v2"
-    model = whisper.load_model(model_name)
+    model = stable_whisper.load_model(model_name)
     embedding_model = PretrainedSpeakerEmbedding( 
         "speechbrain/spkrec-ecapa-voxceleb",
         device=torch.device("cuda" if torch.cuda.is_available() else "cpu"))
 
-
-def convert_time(secs):
-    return datetime.timedelta(seconds=round(secs))
 
 def get_youtube(video_url):
     yt = YouTube(video_url)
@@ -40,7 +38,7 @@ def get_youtube(video_url):
     return abs_video_path
 
 def speech_to_text(video_file_path, selected_source_lang, whisper_model, num_speakers):
-    model = whisper.load_model(whisper_model)
+    model = stable_whisper.load_model(whisper_model)
     time_start = time.time()
     if(video_file_path == None):
         raise ValueError("Error no video input")
@@ -102,15 +100,16 @@ def speech_to_text(video_file_path, selected_source_lang, whisper_model, num_spe
         }
         text = ''
         for (i, segment) in enumerate(segments):
+            print(str(segment["start"]))
             if i == 0 or segments[i - 1]["speaker"] != segment["speaker"]:
-                objects['Start'].append(str(convert_time(segment["start"])))
+                objects['Start'].append(str(segment["start"]))
                 objects['Speaker'].append(segment["speaker"])
                 if i != 0:
-                    objects['End'].append(str(convert_time(segments[i - 1]["end"])))
+                    objects['End'].append(str(segments[i - 1]["end"]))
                     objects['Text'].append(text)
                     text = ''
             text += segment["text"] + ' '
-        objects['End'].append(str(convert_time(segments[i - 1]["end"])))
+        objects['End'].append(str(segments[i - 1]["end"]))
         objects['Text'].append(text)
         
         time_end = time.time()
